@@ -1,25 +1,27 @@
 
-## Despliegue servidor localhost en docker - docker compose 📦
+## Despliegue servidor localhost en docker - Docker compose 📦
 
-Agrega notas adicionales sobre cómo hacer deploy.
+La intención de este git es generar un ambiente de prueba localhost del lado del servidor en Docker para alguna utilizad que pueda ser programada en el futuro.
+
+1.- 
 
 ## Construido con 🛠️
 
 * [docker](https://www.docker.com/) - El framework web usado
-* [NombreDelPaquete](url) - Manejador de dependencias
+* [docker hub](https://hub.docker.com/) - Manejador de imagenes 
 * [NombreDeLaLibrería](url) - Usada para tal cosa
 
 ## Contribuyendo 🖇️
 
-Por favor, lee el [CONTRIBUTING.md](url) para detalles de nuestro código de conducta, y el proceso para enviarnos pull requests.
+Por favor, si se desarrolla alguna funcionalidad para tu aplicativo e-SISSAN. comunicar con jorge para coordinar Commit. 
 
 ## Licencia 📄
 
-Este proyecto está bajo la Licencia (Tu Licencia) - mira el archivo [LICENSE.md](url) para detalles.
+Este proyecto está bajo la Licencia 
 
 ## Autores ✒️
 
-* **Tu Nombre** - *Trabajo Inicial* - [TuGitHub](url)
-* **Otro Nombre** - *Documentación* - [SuGitHub](url)
+* **Benjamin Castillo** - *Trabajo Inicial* -
+* **Jorge Mora** - *Senior* - 
 
 Agradece a todos aquellos que participaron en el proyecto.
