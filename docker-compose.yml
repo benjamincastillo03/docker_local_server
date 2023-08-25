@@ -1,0 +1,215 @@
+version: "3.9"
+services:
+
+  nginx-proxy:
+    container_name: dtrafico_https
+    image: jwilder/nginx-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./datacontenedores/letsencrypt/certs:/etc/nginx/certs:ro
+      - ./datacontenedores/letsencrypt/vhostd:/etc/nginx/vhost.d
+      - ./datacontenedores/letsencrypt/html:/usr/share/nginx/html
+    labels:
+      - com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy
+
+  letsencrypt:
+    container_name: generador_certificados
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    restart: always
+    environment:
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./datacontenedores/letsencrypt/certs:/etc/nginx/certs:rw
+      - ./datacontenedores/letsencrypt/vhostd:/etc/nginx/vhost.d
+      - ./datacontenedores/letsencrypt/htmlhtml:/usr/share/nginx/html
+  
+  www:
+    image: nginx
+    container_name: sitio_home 
+    restart: always
+    expose:
+      - "80"
+    volumes:
+      - ./datacontenedores/www:/usr/share/nginx/html:ro
+    environment:
+      - VIRTUAL_HOST=farmaciaticker.esissan.cl,www.farmaciaticker.esissan.cl
+      - LETSENCRYPT_HOST=qa.esissan.cl,www.qa.esissan.cl
+      - LETSENCRYPT_EMAIL=qa.esissan@araucanianorte.cl
+    depends_on:
+      - nginx-proxy
+      - letsencrypt 
+
+  node_js:
+    container_name: NodeJs
+    restart: unless-stopped
+    build: 
+      context: .
+      dockerfile: ./datacontenedores/node/Dockerfile
+    ports:
+      - "4546:4546"
+      - "3000:3000"
+    depends_on:
+      - oracle  
+    links:
+      - bd_mongo
+    environment:
+      - VIRTUAL_HOST=farmaciainfo.esissan.cl,www.farmaciainfo.esissan.cl
+      - LETSENCRYPT_HOST=qa.esissan.cl,www.qa.esissan.cl
+      - LETSENCRYPT_EMAIL=qa.esissan@araucanianorte.cl  
+    volumes:
+      - ./datacontenedores/node:/home/app
+
+  oracle:
+    #Service name: XEPDB1
+    #Service name: guadmin
+    #database:sysdata
+    #https://hub.docker.com/r/gvenzl/oracle-xe
+    #image: gvenzl/oracle-xe:11.2.0.2-full
+    container_name: oracle_totem
+    image: gvenzl/oracle-xe:21.3.0
+    restart: unless-stopped
+    environment:
+      #ORACLE_RANDOM_PASSWORD: true
+      APP_USER: admin
+      APP_USER_PASSWORD: ssprueba.210
+      ORACLE_DATABASE : admin
+      ORACLE_PASSWORD: ssprueba.210
+      TZ: America/Santiago
+    ports:
+      - 1521:1521
+    volumes:
+      - ./datacontenedores/oracle/init_scripts:/container-entrypoint-initdb.d
+      - ./datacontenedores/oracle/init_sql:/container-entrypoint-startdb.d
+      - ./datacontenedores/oracle/instancias:/u01/app/oracle/
+      - ./datacontenedores/oracle/dpdump:/u01/app/oracle/admin/
+      - ./datacontenedores/oracle/oradata:/u01/app/oracle/oradata/
+      #- ./datacontenedores/oracle/logs:/opt/oracle/oradata/XE/
+      - ./datacontenedores/oracle/backup:/usr/bin/expd    
+
+  bd_mongo:   
+    container_name: Mongobd
+    restart: unless-stopped
+    image: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=ssprueba.210
+    volumes:
+      - mongo-data:/data/db
+
+  vsftpd:
+    restart: always 
+    container_name: vsftpd
+    image: fauria/vsftpd
+    ports:
+      - "21:21"
+      - "20:20"
+      - "21100-21110:21100-21110"
+    environment:
+      - FTP_USER=clickonce_totem
+      - FTP_PASS=ssprueba.210
+      #- PASV_ADDRESS=10.69.76.39
+      - PASV_ADDRESS=10.68.159.13
+      - PASV_MIN_PORT=21100
+      - PASV_MAX_PORT=21110
+      - PASV_ENABLE=YES
+      - ANONYMOUS_ENABLE=NO
+    volumes:
+      - ./datacontenedores/vsftpd/wpf_totem:/home/vsftpd/clickonce
+
+  vsftpd_arch:
+    restart: always 
+    container_name: vsftpd_arch
+    image: fauria/vsftpd
+    ports:
+      - "31:31"
+      - "30:30"
+      - "31100-31110:31100-31110"
+    environment:
+      - FTP_USER=administracion
+      - FTP_PASS=ssprueba.210
+      #- PASV_ADDRESS=10.69.76.39
+      - PASV_ADDRESS=10.68.159.13
+      - PASV_MIN_PORT=21100
+      - PASV_MAX_PORT=21110
+      - PASV_ENABLE=YES
+      - ANONYMOUS_ENABLE=NO
+    volumes:
+      - ./datacontenedores/vsftpd_arch/wpf_totem:/home/vsftpd/archivos
+
+  nginx:
+    image: nginx
+    container_name: cx_totemsocket
+    volumes:
+      - ./datacontenedores/nginx_proxy/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "5000:5000"
+    restart: always
+
+
+  python_service:
+    container_name: py_get
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./datacontenedores/python/Dockerfile
+    volumes:
+      - ./datacontenedores/python:/app
+      - shared_volume:/datacontenedores/python/bd/
+    working_dir: /app
+    depends_on:
+      - oracle  
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      - TZ=America/Santiago
+    ports:
+      - 8000:8000
+    #network_mode: host  
+    command: python3 app.py
+
+  python_loop:
+    container_name: py_loop
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./datacontenedores/python2/Dockerfile
+    volumes:
+      - ./datacontenedores/python2:/app
+      - shared_volume:/datacontenedores/python/bd/
+    working_dir: /app
+    depends_on:
+      - oracle  
+    environment:
+      - FLASK_APP=loop.py
+      - FLASK_ENV=development
+      - TZ=America/Santiago
+    ports:
+      - 8001:8001
+    #network_mode: host  
+    command: python3 loop.py  
+
+  nextcloud_conteinter:
+    image: nextcloud
+    ports:
+      - "7777:80"
+      - "7778:443"
+    volumes:
+      - ./datacontenedores/nextcloud:/var/www/html
+    environment:
+      - NEXTCLOUD_ADMIN_USER=administrador
+      - NEXTCLOUD_ADMIN_PASSWORD=totem.2010  
+    restart: always  
+
+volumes:
+  shared_volume:
+  mongo-data:
+  data-node:  
+  oracle_data:
+  oracle_volume:   

@@ -1,0 +1,9 @@
+.grid_cabecera                          {
+    display                             :   grid;
+    grid-template-columns               :   auto auto auto;
+    grid-row-gap                        :   20px;
+    align-items                         :   center;
+    justify-items                       :   stretch;
+    gap                                 :   6px;
+    margin-right                        :   10px;
+}
