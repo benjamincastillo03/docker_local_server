@@ -1,11 +1,11 @@
 
-## Despliegue 📦
+## Despliegue servidor localhost en docker - docker compose 📦
 
 Agrega notas adicionales sobre cómo hacer deploy.
 
 ## Construido con 🛠️
 
-* [NombreDelFramework](url) - El framework web usado
+* [docker](https://www.docker.com/) - El framework web usado
 * [NombreDelPaquete](url) - Manejador de dependencias
 * [NombreDeLaLibrería](url) - Usada para tal cosa
 
